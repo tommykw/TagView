@@ -7,12 +7,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.graphics.drawable.GradientDrawable
+import android.widget.LinearLayout
 
-class TagView @JvmOverloads constructor(
+class TagView<T> @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
-) : ViewGroup(context, attrs, defStyle) {
+) : LinearLayout(context, attrs, defStyle) {
 
     private val tags = arrayListOf<TextView>()
     private var lineHeight = 0
@@ -25,11 +26,11 @@ class TagView @JvmOverloads constructor(
     private val cornerRadius: Float
     private val leftDrawableId: Int
     private val leftDrawablePadding: Int
-    private val sortItemType: Int
+    private val sortType: Long
     private val strokeWidth: Int
     private val strokeColor: Int
 
-    private var tagClickListener: TagClickListener? = null
+    private var tagClickListener: TagClickListener<T>? = null
 
     init {
         val styledAttrs = context.obtainStyledAttributes(attrs, R.styleable.TagView)
@@ -42,17 +43,18 @@ class TagView @JvmOverloads constructor(
         cornerRadius = styledAttrs.getDimension(R.styleable.TagView_corner_radius, 60f)
         leftDrawableId = styledAttrs.getResourceId(R.styleable.TagView_left_drawable, -1)
         leftDrawablePadding = styledAttrs.getDimension(R.styleable.TagView_left_drawable_padding, 1f).toInt()
-        sortItemType = styledAttrs.getInteger(R.styleable.TagView_sort_items, -1)
+        sortType = styledAttrs.getInt(R.styleable.TagView_sort_type, -1).toLong()
         strokeWidth = styledAttrs.getDimension(R.styleable.TagView_stroke_width, 1f).toInt()
         strokeColor = styledAttrs.getColor(R.styleable.TagView_stroke_color, ContextCompat.getColor(context, R.color.white))
+
         styledAttrs.recycle()
     }
 
-    override fun generateDefaultLayoutParams(): ViewGroup.LayoutParams {
+    override fun generateDefaultLayoutParams(): LinearLayout.LayoutParams {
         return TagLayoutParams(horizontalSpacing, verticalSpacing)
     }
 
-    override fun generateLayoutParams(p: ViewGroup.LayoutParams): ViewGroup.LayoutParams {
+    override fun generateLayoutParams(p: ViewGroup.LayoutParams): LinearLayout.LayoutParams {
         return TagLayoutParams(horizontalSpacing, verticalSpacing)
     }
 
@@ -64,8 +66,7 @@ class TagView @JvmOverloads constructor(
         var xPos = paddingLeft
         var yPos = paddingTop
 
-        for (i in 0 until count) {
-            val child = getChildAt(i)
+        tags.forEach { child ->
             if (child.visibility != View.GONE) {
                 val childWidth = child.measuredWidth
                 val childHeight = child.measuredHeight
@@ -85,7 +86,6 @@ class TagView @JvmOverloads constructor(
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = View.MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight
         var height = View.MeasureSpec.getSize(heightMeasureSpec) - paddingTop - paddingBottom
-        val count = childCount
         var lineHeight = 0
 
         var xPos = paddingLeft
@@ -98,8 +98,7 @@ class TagView @JvmOverloads constructor(
             childHeightMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         }
 
-        for (i in 0 until count) {
-            val child = getChildAt(i)
+        tags.forEach { child ->
             if (child.visibility != View.GONE) {
                 val lp = child.layoutParams as TagLayoutParams
                 child.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.AT_MOST), childHeightMeasureSpec)
@@ -113,6 +112,7 @@ class TagView @JvmOverloads constructor(
                 xPos += childWidth + lp.horizontalSpacing
             }
         }
+
         this.lineHeight = lineHeight
         if (View.MeasureSpec.getMode(heightMeasureSpec) == View.MeasureSpec.UNSPECIFIED) {
             height = yPos + lineHeight
@@ -125,20 +125,18 @@ class TagView @JvmOverloads constructor(
         setMeasuredDimension(width, height)
     }
 
-    fun setTags(words: List<String>) {
-        val newWords = if (sortItemType == 1) {
-            words.sortedBy { it.length }
-        } else if (sortItemType == 2) {
-            words.sortedByDescending { it.length }
-        } else {
-            words
+    fun setTags(items: List<T>, transform: DataTransform<T>) {
+        val newItems = when(sortType) {
+            Annotations.SORT_TYPE_ASC -> items.sortedBy { transform.transfer(it).length }
+            Annotations.SORT_TYPE_DESC -> items.sortedByDescending { transform.transfer(it).length }
+            else -> items
         }
 
-        newWords.forEach { setTag(it) }
+        newItems.forEach { setTag(it, transform) }
         requestLayout()
     }
 
-    private fun setTag(word: String) {
+    private fun setTag(item: T, transform: DataTransform<T>) {
         val chips = (ContextCompat.getDrawable(context, R.drawable.chips) as GradientDrawable).also {
             it.cornerRadius = cornerRadius
             it.setColor(backgroundColorId)
@@ -148,7 +146,7 @@ class TagView @JvmOverloads constructor(
         val tag = TextView(context).apply {
             setTextColor(textColorId)
             background = chips
-            text = word
+            text = transform.transfer(item)
             textSize = textFontSize.toFloat()
             setOnTouchListener { _, _ -> false }
             if (textAppearanceId != -1) {
@@ -164,7 +162,7 @@ class TagView @JvmOverloads constructor(
             }
 
             setOnClickListener {
-                tagClickListener?.onTagClick("")
+                tagClickListener?.onTagClick(item)
             }
         }
 
@@ -177,11 +175,11 @@ class TagView @JvmOverloads constructor(
         removeAllViews()
     }
 
-    fun setClickListener(listener: TagClickListener) {
+    fun setClickListener(listener: TagClickListener<T>) {
         tagClickListener = listener
     }
 
-    interface TagClickListener {
-        fun onTagClick(name: String)
+    interface TagClickListener<T> {
+        fun onTagClick(item: T)
     }
 }
