@@ -18,15 +18,16 @@
 
     <com.github.tommykw.tagview.TagView
         android:id="@+id/tagview"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_large"
         android:layout_marginStart="@dimen/spacing_big"
+        android:gravity="center"
         app:stroke_width="1dp"
         app:stroke_color="@color/gray"
         app:background_color="@color/white"
         app:left_drawable_padding="4dp"
-        app:sort_items="1"
+        app:sort_type="desc"
         app:left_drawable="@drawable/ic_launcher_background"
         app:horizontal_spacing="4dp"
         app:vertical_spacing="@dimen/spacing_small"
