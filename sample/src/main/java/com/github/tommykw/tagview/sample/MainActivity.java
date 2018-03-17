@@ -18,32 +18,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        List list = new ArrayList<Item>();
+        List<Item> list = new ArrayList<>();
 
-        list.add(new Item(1, "緊急帝王切開"));
-        list.add(new Item(2, "男の子"));
-        list.add(new Item(3, "子宮"));
-        list.add(new Item(4, "流産"));
-        list.add(new Item(5, "妊娠"));
+        list.add(new Item(1, "cesarean section"));
+        list.add(new Item(2, "boy"));
+        list.add(new Item(3, "natural birth"));
+        list.add(new Item(4, "pregnancy"));
 
-        TagView tags = findViewById(R.id.tagview);
-        tags.setTags(list, new DataTransform() {
+        TagView<Item> tags = findViewById(R.id.tagview);
+        tags.setTags(list, new DataTransform<Item>() {
             @NotNull
             @Override
-            public String transfer(Object item) {
-                if (item instanceof Item) {
-                    return ((Item) item).getName();
-                }
-                return item.toString();
+            public String transfer(Item item) {
+                return item.getName();
             }
         });
-        tags.setClickListener(new TagView.TagClickListener() {
+        tags.setClickListener(new TagView.TagClickListener<Item>() {
             @Override
-            public void onTagClick(Object item) {
-                if (item instanceof Item) {
-                    int id = ((Item) item).getId();
-                }
-
+            public void onTagClick(Item item) {
+                item.getId();
             }
         });
     }

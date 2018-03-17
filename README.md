@@ -34,24 +34,21 @@ Android library for creating simple tag view.
 ```
 ### 2.Implement your items
 ```java
-List list = new ArrayList<Item>();
-TagView tags = findViewById(R.id.tagview);
-tags.setTags(list, new DataTransform() {
+List<Item> list = new ArrayList<>();
+TagView<Item> tags = findViewById(R.id.tagview);
+
+tags.setTags(list, new DataTransform<Item>() {
     @NotNull
     @Override
-    public String transfer(Object item) {
-        if (item instanceof Item) {
-            return ((Item) item).getName();
-        }
-        return item.toString();
+    public String transfer(Item item) {
+        return item.getName();
     }
 });
-tags.setClickListener(new TagView.TagClickListener() {
+
+tags.setClickListener(new TagView.TagClickListener<Item>() {
     @Override
-    public void onTagClick(Object item) {
-        if (item instanceof Item) {
-            int id = ((Item) item).getId();
-        }
+    public void onTagClick(Item item) {
+        item.getId();
     }
 });
 ```
